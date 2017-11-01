@@ -1,20 +1,14 @@
 package ApiUsageTest;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.xerces.dom3.as.ASObjectList;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
-import org.jsoup.select.Evaluator.ContainsData;
-import org.jsoup.select.Evaluator.ContainsText;
-import org.junit.Ignore;
-import org.junit.Test; 
+import org.junit.Assert;
+import org.junit.Test;
+
 import io.restassured.RestAssured;
+import io.restassured.config.RestAssuredConfig;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
-import static org.hamcrest.Matchers.hasItem;
 
 public class ApiUsageTest {
 
@@ -27,9 +21,8 @@ public class ApiUsageTest {
     	when().get("/laptops/Y700").
         then().assertThat().statusCode(200).log().status()
         .and().assertThat().body("model", IsEqual.equalTo("Y700"));
-
+    	
     }
-    
     
 
 	/*If we want to capture the status code or any other info
@@ -61,6 +54,40 @@ public class ApiUsageTest {
         body("feature", Matchers.hasEntry("hdd", "750GB")).and().
         body("feature", Matchers.hasEntry("ram", 8));
     }
+   
+   
+   	/*Testing the POST method
+   	 *In order to specify a body of the request before calling the HTTP method, we have to accept the content type
+   	 *of the returned response to be in JSON(or xml if the server damands it.
+   	 *Testing the POST method while serializing the object*/
+   @Test
+   public void postRequestTestWithSerialization() {
+	   Laptop laptop = new Laptop("Apple", "MacBook", 3000, "750Gb", 8);
+	   RestAssured.given().accept(ContentType.JSON).contentType(ContentType.JSON).when().body(laptop.toString()).log().all().post("/laptops").then().log().all().statusCode(200);
+	   
+   }
+   
+   /*Testing the POST method with String Json, copied directly from the Above Get result*/
+   @Test
+   public void postRequestTestWithStringJson() {
+	   RestAssured.given().accept(ContentType.JSON).contentType(ContentType.JSON).when().body("   {\r\n" + 
+	   		"        \"brand\": \"LG\",\r\n" + 
+	   		"        \"model\": \"Gram\",\r\n" + 
+	   		"        \"price\": 1600,\r\n" + 
+	   		"        \"feature\": {\r\n" + 
+	   		"            \"ram\": 4,\r\n" + 
+	   		"            \"hdd\": \"500TB\"\r\n" + 
+	   		"        }\r\n" + 
+	   		"    }").post("/laptops").then().log().all().statusCode(200);
+   }
+   
+   /*Validating the response time*/
+   @Test
+   public void validateResponseTime() {
+	   RestAssured.given().accept(ContentType.JSON).when().get("/laptops").then().time(Matchers.lessThan(1000l));
+	   
+   }
+   
     
     /*printing all the laptops as a string and logging all resources from the endpoint*/
     @Test
